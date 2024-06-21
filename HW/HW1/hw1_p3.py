@@ -1,0 +1,17 @@
+v = float(input("Input velocity:"))
+Alpha = 4.3
+Barnard = 6.0  
+Betelgeuse = 309
+Andromeda = 2e6
+c = 299792458
+percent = v / c
+print("Percentage of light speed =", percent)
+gamma = 1 / ((1 - percent ** 2)) ** 0.5
+t_Alpha = Alpha / gamma
+t_Barnard = Barnard / gamma
+t_Betelgeuse = Betelgeuse / gamma
+t_Andromeda = Andromeda / gamma
+print("Travel time to Alpha Centauri =", t_Alpha)
+print("Travel time to Barnard's Star =", t_Barnard)
+print("Travel time to Betelgeuse (in the Milky Way) =", t_Betelgeuse)
+print("Travel time to Andromeda Galaxy (closest galaxy) =", t_Andromeda)
