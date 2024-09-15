@@ -1,0 +1,176 @@
+---
+title: "My Report H24101094"
+date: today
+author: YU FAN SHIU
+format:
+ pdf:
+    include-in-header:
+      - text: |
+         \usepackage{setspace,relsize}
+mainfont: "Microsoft JhengHei UI"
+toc: true
+---
+
+
+# Summary Staistic  
+
+```{r}
+library(palmerpenguins)
+head(penguins_raw)
+
+library(dplyr)
+library(lubridate)
+
+# 函數：識別變量類型（添加排除選項）
+identify_var_types <- function(data, exclude = c()) {
+  var_types <- sapply(data, class)
+  var_types <- var_types[!names(var_types) %in% exclude]
+  list(
+    numeric = names(var_types[var_types %in% c("numeric", "integer")]),
+    categorical = names(var_types[var_types %in% c("character", "factor")]),
+    date = names(var_types[var_types == "Date"])
+  )
+}
+
+# 函數：數值變量的描述性統計
+summarize_numeric <- function(data, numeric_vars) {
+  data %>%
+    select(all_of(numeric_vars)) %>%
+    summary()
+}
+
+# 函數：類別變量的頻率統計
+summarize_categorical <- function(data, categorical_vars) {
+  lapply(categorical_vars, function(var) {
+    data %>%
+      count(!!sym(var)) %>%
+      mutate(percentage = n / sum(n) * 100)
+  })
+}
+
+# 函數：日期變量的特殊處理
+summarize_date <- function(data, date_vars) {
+  lapply(date_vars, function(var) {
+    data %>%
+      summarise(
+        min_date = min(!!sym(var), na.rm = TRUE),
+        max_date = max(!!sym(var), na.rm = TRUE),
+        mean_date = mean(!!sym(var), na.rm = TRUE),
+        median_date = median(!!sym(var), na.rm = TRUE),
+        n_unique_dates = n_distinct(!!sym(var)),
+        most_common_year = names(which.max(table(year(!!sym(var))))),
+        most_common_month = names(which.max(table(month(!!sym(var))))),
+        most_common_day = names(which.max(table(day(!!sym(var)))))
+      )
+  })
+}
+
+# 主函數：執行所有分析（添加排除選項）
+analyze_dataset <- function(data, exclude = c()) {
+  var_types <- identify_var_types(data, exclude)
+  
+  results <- list(
+    numeric_summary = summarize_numeric(data, var_types$numeric),
+    categorical_summary = summarize_categorical(data, var_types$categorical),
+    date_summary = summarize_date(data, var_types$date)
+  )
+  
+  return(results)
+}
+
+# 使用範例（排除 "Individual ID"）
+results <- analyze_dataset(penguins_raw, exclude = c("Individual ID", "Comments"))
+
+print(results$numeric_summary)
+print(results$categorical_summary)
+print(results$date_summary)
+```
+
+
+# Missing Values
+
+```{r}
+library(DataExplorer)
+library(Hmisc)
+plot_missing(penguins_raw)
+```
+
+
+# Penguin mass vs. flipper length
+
+```{r}
+mass_flipper <- ggplot(data = penguins_raw,
+                       aes(x = `Flipper Length (mm)`,
+                           y = `Body Mass (g)`)) +
+  geom_point(aes(color = Species,
+                 shape = Species),
+             size = 3,
+             alpha = 0.8) +
+  scale_color_manual(values = c("darkorange","purple","cyan4")) +
+  labs(title = "Penguin size, Palmer Station LTER",
+       subtitle = "Flipper length and body mass for Adelie, Chinstrap and Gentoo Penguins",
+       x = "Flipper length (mm)\n",
+       y = "\nBody mass (g)",
+       color = "Penguin species",
+       shape = "Penguin species") +
+  theme(legend.position = c(0.2, 0.8),
+        plot.title.position = "plot",
+        plot.caption = element_text(hjust = 0, face= "italic"),
+        plot.caption.position = "plot",
+        legend.title = element_text(size = 8), 
+        legend.text = element_text(size = 6)) 
+mass_flipper
+```
+
+
+
+# Body mass histograms
+
+```{r}
+mass_hist <- ggplot(data = penguins_raw, aes(x = `Body Mass (g)`)) +
+  geom_histogram(aes(fill = Species), alpha = 0.5, position = "identity") +
+  scale_fill_manual(
+    values = c("darkorange", "purple", "cyan4"),
+    labels = c("Adelie Penguin", "Chinstrap penguin", "Gentoo penguin")
+  ) +
+  labs(x = "Body mass (g)", y = "Frequency", title = "Penguin body mass") +
+  theme(plot.title = element_text(size = 14),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.text = element_text(size = 8))
+
+mass_hist
+```
+
+
+
+# Date Egg 
+
+```{r}
+ggplot(penguins_raw, aes(x = `Date Egg`, fill = Species)) + 
+  geom_histogram(binwidth = 7, position = "identity", alpha = 0.7) + 
+  scale_fill_manual(
+    values = c("darkorange", "purple", "cyan4"),
+    labels = c("Adelie Penguin", "Chinstrap penguin", "Gentoo penguin")
+  ) + 
+  labs(
+    title = "Distribution of Penguin Egg Laying Dates by Species", 
+    x = "Egg Laying Date", 
+    y = "Frequency"
+  ) + 
+  theme_minimal() + 
+  theme(legend.position = "bottom")
+
+ggplot(penguins_raw, aes(x = `Date Egg`, fill = Species)) +
+  geom_density(alpha = 0.5) +
+  scale_fill_manual(
+    values = c("darkorange", "purple", "cyan4"),
+    labels = c("Adelie Penguin", "Chinstrap penguin", "Gentoo penguin")
+  ) +
+  labs(title = "Density of Egg Laying Dates by Species",
+       x = "Egg Laying Date",
+       y = "Density") +
+  theme_minimal()
+```
+
